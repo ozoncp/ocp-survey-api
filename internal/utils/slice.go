@@ -1,23 +1,22 @@
 package utils
 
 // SplitSlice splits input slice into chunks of specified size.
-func SplitSlice(s []int, chunkSize uint) [][]int {
-	if s == nil || len(s) == 0 || chunkSize <= 0 {
+func SplitSlice(slice []int, chunkSize int) [][]int {
+	if slice == nil || len(slice) == 0 || chunkSize <= 0 {
 		return nil
 	}
 
-	size := int(chunkSize)
-	count := (len(s) + size-1) / size
-	os := make([][]int, count)
+	count := (len(slice) + chunkSize - 1) / chunkSize
+	res := make([][]int, count)
 
 	start := 0
 	i := 0
 	for ; i < count-1; i++ {
-		os[i] = s[start:start+size]
-		start += size
+		res[i] = slice[start:start+chunkSize]
+		start += chunkSize
 	}
-	os[i] = s[start:]	// last chunk
-	return os
+	res[i] = slice[start:] // last chunk
+	return res
 }
 
 // ReverseMap returns map with keys and values exchanged.
@@ -26,30 +25,29 @@ func ReverseMap(m map[string]int) map[int]string {
 		return nil
 	}
 
-	om := make(map[int]string, len(m))
+	res := make(map[int]string, len(m))
 	for k, v := range m {
-		om[v] = k
+		res[v] = k
 	}
-	return om
+	return res
 }
 
-// FilterSlice removes elements specified in hardcoded list.
-func FilterSlice(s []int) []int {
-	if s == nil || len(s) == 0 {
+// FilterSlice removes elements specified in filter list.
+func FilterSlice(slice []int, filter []int) []int {
+	if slice == nil || len(slice) == 0 {
 		return nil
 	}
 
-	filter := [...]int{-1, 0, 1}	// hardcoded list
-	os := make([]int, 0, len(s))
-
-	loop:
-	for _, v := range s {
-		for _, f := range filter {
-			if v == f {
-				continue loop
-			}
-		}
-		os = append(os, v)
+	flt := make(map[int]bool, len(filter))
+	for _, v := range filter {
+		flt[v] = true
 	}
-	return os
+
+	res := make([]int, 0, len(slice))
+	for _, v := range slice {
+		if !flt[v] {
+			res = append(res, v)
+		}
+	}
+	return res
 }

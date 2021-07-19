@@ -7,8 +7,8 @@ import (
 
 func TestSplitSlice(t *testing.T) {
 	type args struct {
-		s         []int
-		batchSize uint
+		slice     []int
+		batchSize int
 	}
 	tests := []struct {
 		name string
@@ -18,7 +18,7 @@ func TestSplitSlice(t *testing.T) {
 		{
 			name: "Nil slice",
 			args: args{
-				s:         nil,
+				slice:     nil,
 				batchSize: 3,
 			},
 			want: nil,
@@ -26,7 +26,7 @@ func TestSplitSlice(t *testing.T) {
 		{
 			name: "Empty slice",
 			args: args{
-				s:         []int{},
+				slice:     []int{},
 				batchSize: 3,
 			},
 			want: nil,
@@ -34,7 +34,7 @@ func TestSplitSlice(t *testing.T) {
 		{
 			name: "Invalid batch size",
 			args: args{
-				s:         []int{0, 1, 2},
+				slice:     []int{0, 1, 2},
 				batchSize: 0,
 			},
 			want: nil,
@@ -42,7 +42,7 @@ func TestSplitSlice(t *testing.T) {
 		{
 			name: "Smaller than batch",
 			args: args{
-				s:         []int{0, 1, 2},
+				slice:     []int{0, 1, 2},
 				batchSize: 5,
 			},
 			want: [][]int{{0, 1, 2}},
@@ -50,7 +50,7 @@ func TestSplitSlice(t *testing.T) {
 		{
 			name: "Same size as batch",
 			args: args{
-				s:         []int{0, 1, 2, 3},
+				slice:     []int{0, 1, 2, 3},
 				batchSize: 4,
 			},
 			want: [][]int{{0, 1, 2, 3}},
@@ -58,7 +58,7 @@ func TestSplitSlice(t *testing.T) {
 		{
 			name: "Larger than batch",
 			args: args{
-				s:         []int{0, 1, 2, 3, 4, 5, 6, 7},
+				slice:     []int{0, 1, 2, 3, 4, 5, 6, 7},
 				batchSize: 3,
 			},
 			want: [][]int{{0, 1, 2}, {3, 4, 5}, {6, 7}},
@@ -66,7 +66,7 @@ func TestSplitSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := SplitSlice(tt.args.s, tt.args.batchSize); !reflect.DeepEqual(got, tt.want) {
+			if got := SplitSlice(tt.args.slice, tt.args.batchSize); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SplitSlice() = %v, want %v", got, tt.want)
 			}
 		})
@@ -165,7 +165,8 @@ func TestReverseMap_Duplicates(t *testing.T) {
 
 func TestFilterSlice(t *testing.T) {
 	type args struct {
-		s []int
+		slice  []int
+		filter []int
 	}
 	tests := []struct {
 		name string
@@ -174,33 +175,64 @@ func TestFilterSlice(t *testing.T) {
 	}{
 		{
 			name: "Nil slice",
-			args: args{s: nil},
+			args: args{
+				slice:  nil,
+				filter: []int{-1, 0, 1},
+			},
 			want: nil,
 		},
 		{
 			name: "Empty slice",
-			args: args{s: []int{}},
+			args: args{
+				slice:  []int{},
+				filter: []int{-1, 0, 1},
+			},
 			want: nil,
 		},
 		{
+			name: "Nil filter",
+			args: args{
+				slice:  []int{0, 1, 2, 3, 4},
+				filter: nil,
+			},
+			want: []int{0, 1, 2, 3, 4},
+		},
+		{
+			name: "Empty filter",
+			args: args{
+				slice:  []int{0, 1, 2, 3, 4},
+				filter: []int{},
+			},
+			want: []int{0, 1, 2, 3, 4},
+		},
+		{
 			name: "Nothing to remove",
-			args: args{s: []int{2, 3, 4, 5}},
+			args: args{
+				slice:  []int{2, 3, 4, 5},
+				filter: []int{-1, 0, 1},
+			},
 			want: []int{2, 3, 4, 5},
 		},
 		{
 			name: "Remove some items",
-			args: args{s: []int{0, 1, 2, 3, 4, 5, -1}},
+			args: args{
+				slice:  []int{0, 1, 2, 3, 4, 5, -1},
+				filter: []int{-1, 0, 1},
+			},
 			want: []int{2, 3, 4, 5},
 		},
 		{
 			name: "Remove all items",
-			args: args{s: []int{-1, 0, 1, 0}},
+			args: args{
+				slice:  []int{-1, 0, 1, 0},
+				filter: []int{-1, 0, 1},
+			},
 			want: []int{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FilterSlice(tt.args.s); !reflect.DeepEqual(got, tt.want) {
+			if got := FilterSlice(tt.args.slice, tt.args.filter); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FilterSlice() = %v, want %v", got, tt.want)
 			}
 		})
