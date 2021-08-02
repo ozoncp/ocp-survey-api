@@ -9,7 +9,7 @@ import (
 // SplitToChunks splits input slice of Surveys into chunks of specified size.
 func SplitToChunks(surveys []models.Survey, chunkSize int) ([][]models.Survey, error) {
 	if len(surveys) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("empty input")
 	}
 	if chunkSize <= 0 {
 		return nil, fmt.Errorf("invalid chunk size (%v)", chunkSize)

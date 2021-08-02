@@ -25,7 +25,7 @@ func TestSplitToChunks(t *testing.T) {
 				chunkSize: 10,
 			},
 			want:    nil,
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "Invalid chunk size",
