@@ -1,15 +1,13 @@
 package flusher
 
 import (
-	"fmt"
-
 	"github.com/ozoncp/ocp-survey-api/internal/models"
 	"github.com/ozoncp/ocp-survey-api/internal/repo"
 	"github.com/ozoncp/ocp-survey-api/internal/utils"
 )
 
 type Flusher interface {
-	Flush(surveys []models.Survey) ([]models.Survey, error)
+	Flush(surveys []models.Survey) []models.Survey
 }
 
 type flusher struct {
@@ -18,35 +16,27 @@ type flusher struct {
 }
 
 // New creates an instance of Flusher with batch save functionality.
-// Returns error in case of invalid parameters.
-func New(chunkSize int, surveyRepo repo.Repo) (Flusher, error) {
-	if chunkSize <= 0 {
-		return nil, fmt.Errorf("invalid chunk size: %v", chunkSize)
-	}
-	if surveyRepo == nil {
-		return nil, fmt.Errorf("repo is nil")
-	}
-
+func New(chunkSize int, surveyRepo repo.Repo) Flusher {
 	return &flusher{
 		chunkSize:  chunkSize,
 		surveyRepo: surveyRepo,
-	}, nil
+	}
 }
 
 // Flush saves items into storage.
 // Returns a slice of items that could not be stored.
-func (f *flusher) Flush(surveys []models.Survey) ([]models.Survey, error) {
+func (f *flusher) Flush(surveys []models.Survey) []models.Survey {
 	chunks, err := utils.SplitToChunks(surveys, f.chunkSize)
 	if err != nil {
-		return surveys, fmt.Errorf("flush error: %w", err)
+		return surveys
 	}
 
 	for chunkIdx := range chunks {
 		err := f.surveyRepo.AddSurvey(chunks[chunkIdx])
 		if err != nil {
-			return surveys[f.chunkSize*chunkIdx:], fmt.Errorf("flush error: %w", err)
+			return surveys[f.chunkSize*chunkIdx:]
 		}
 	}
 
-	return nil, nil
+	return nil
 }
