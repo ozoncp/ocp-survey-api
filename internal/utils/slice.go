@@ -2,7 +2,7 @@ package utils
 
 // SplitSlice splits input slice into chunks of specified size.
 func SplitSlice(slice []int, chunkSize int) [][]int {
-	if slice == nil || len(slice) == 0 || chunkSize <= 0 {
+	if len(slice) == 0 || chunkSize <= 0 {
 		return nil
 	}
 
@@ -12,7 +12,7 @@ func SplitSlice(slice []int, chunkSize int) [][]int {
 	start := 0
 	i := 0
 	for ; i < count-1; i++ {
-		res[i] = slice[start:start+chunkSize]
+		res[i] = slice[start : start+chunkSize]
 		start += chunkSize
 	}
 	res[i] = slice[start:] // last chunk
@@ -21,7 +21,7 @@ func SplitSlice(slice []int, chunkSize int) [][]int {
 
 // ReverseMap returns map with keys and values exchanged.
 func ReverseMap(m map[string]int) map[int]string {
-	if m == nil || len(m) == 0 {
+	if len(m) == 0 {
 		return nil
 	}
 
@@ -34,7 +34,7 @@ func ReverseMap(m map[string]int) map[int]string {
 
 // FilterSlice removes elements specified in filter list.
 func FilterSlice(slice []int, filter []int) []int {
-	if slice == nil || len(slice) == 0 {
+	if len(slice) == 0 {
 		return nil
 	}
 

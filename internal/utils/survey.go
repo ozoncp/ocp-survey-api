@@ -35,11 +35,11 @@ func SliceToMap(surveys []models.Survey) (map[uint64]models.Survey, error) {
 	}
 
 	res := make(map[uint64]models.Survey, len(surveys))
-	for _, v := range surveys {
-		if _, exists := res[v.Id]; exists {
-			return nil, fmt.Errorf("entries with duplicate IDs: [%s], [%s]", res[v.Id], v)
+	for _, survey := range surveys {
+		if _, exists := res[survey.Id]; exists {
+			return nil, fmt.Errorf("entries with duplicate IDs: [%s], [%s]", res[survey.Id], survey)
 		}
-		res[v.Id] = v
+		res[survey.Id] = survey
 	}
 	return res, nil
 }
