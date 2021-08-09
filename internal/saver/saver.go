@@ -15,7 +15,6 @@ type Saver interface {
 }
 
 type saver struct {
-	ctx      context.Context
 	capacity uint
 	flusher  flusher.Flusher
 	timeout  time.Duration
@@ -39,7 +38,6 @@ func New(
 	done := make(chan struct{})
 
 	s := &saver{
-		ctx:      ctx,
 		capacity: capacity,
 		flusher:  flusher,
 		timeout:  timeout,
@@ -49,7 +47,7 @@ func New(
 		done:     done,
 	}
 
-	go s.start()
+	go s.start(ctx)
 	return s
 }
 
@@ -71,7 +69,7 @@ func (s *saver) flush() {
 	}
 }
 
-func (s *saver) start() {
+func (s *saver) start(ctx context.Context) {
 	ticker := time.NewTicker(s.timeout)
 	defer ticker.Stop()
 
@@ -86,7 +84,7 @@ func (s *saver) start() {
 		case <-ticker.C:
 			s.flush()
 
-		case <-s.ctx.Done():
+		case <-ctx.Done():
 			s.flush()
 			close(s.done)
 			if len(s.surveys) > 0 {
