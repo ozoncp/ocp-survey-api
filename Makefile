@@ -41,7 +41,7 @@ install: build .install
 
 .PHONY: .install
 install:
-		go install cmd/grpc-server/main.go
+		go install cmd/ocp-survey-api/main.go
 
 
 .PHONY: vendor-proto
