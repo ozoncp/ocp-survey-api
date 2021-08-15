@@ -31,16 +31,16 @@ func run(ctx context.Context) error {
 func runGRPC(_ context.Context) error {
 	listen, err := net.Listen("tcp", grpcPort)
 	if err != nil {
-		log.Fatal().Msgf("GRPC Listen: %v", err)
+		log.Error().Msgf("GRPC Listen: %v", err)
 		return err
 	}
 
-	s := grpc.NewServer()
-	desc.RegisterOcpSurveyApiServer(s, api.NewOcpSurveyApi())
+	srv := grpc.NewServer()
+	desc.RegisterOcpSurveyApiServer(srv, api.NewOcpSurveyApi())
 
-	err = s.Serve(listen)
+	err = srv.Serve(listen)
 	if err != nil {
-		log.Fatal().Msgf("GRPC Serve: %v", err)
+		log.Error().Msgf("GRPC Serve: %v", err)
 	}
 	return err
 }
@@ -51,15 +51,16 @@ func runJSON(ctx context.Context) error {
 
 	err := desc.RegisterOcpSurveyApiHandlerFromEndpoint(ctx, mux, grpcEndpoint, opts)
 	if err != nil {
-		log.Fatal().Msgf("Register JSON API handler: %v", err)
+		log.Error().Msgf("Register JSON API handler: %v", err)
 		return err
 	}
 
-	err = http.ListenAndServe(httpPort, mux)
-	if err != nil {
-		log.Fatal().Msgf("JSON Serve: %v", err)
+	srv := &http.Server{Addr: httpPort, Handler: mux}
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		log.Error().Msgf("JSON Serve: %v", err)
+		return err
 	}
-	return err
+	return nil
 }
 
 func main() {
