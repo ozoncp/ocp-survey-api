@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+import "github.com/envoyproxy/protoc-gen-validate/validate/validate.proto";
+
+package ocp.survey.api;
+
+option go_package = "github.com/ozoncp/ocp-survey-api/pkg/ocp-survey-api;ocp_survey_api";
+
+// Сервис опросов
+service OcpSurveyApi {
+
+    // Создает новый опрос
+    rpc CreateSurveyV1(CreateSurveyV1Request) returns (CreateSurveyV1Response) {
+        option (google.api.http) = {
+            post: "/v1/surveys"
+            body: "*"
+        };
+    }
+
+    // Возвращает описание опроса по ID
+    rpc DescribeSurveyV1(DescribeSurveyV1Request) returns (DescribeSurveyV1Response) {
+        option (google.api.http) = {
+            get: "/v1/surveys/{survey_id}"
+        };
+    }
+
+    // Возвращает список опросов
+    rpc ListSurveysV1(ListSurveysV1Request) returns (ListSurveysV1Response) {
+        option (google.api.http) = {
+            get: "/v1/surveys"
+        };
+    }
+
+    // Удаляет опрос
+    rpc RemoveSurveyV1(RemoveSurveyV1Request) returns (RemoveSurveyV1Response) {
+        option (google.api.http) = {
+            delete: "/v1/surveys/{survey_id}"
+        };
+    }
+}
+
+
+// Описание опроса
+message Survey {
+    uint64 id = 1;
+    uint64 user_id = 2;
+    string link = 3;
+}
+
+message CreateSurveyV1Request {
+    uint64 user_id = 1;
+    string link = 2;
+}
+
+message CreateSurveyV1Response {
+    uint64 survey_id = 1;
+}
+
+message DescribeSurveyV1Request {
+    uint64 survey_id = 1 [(validate.rules).uint64.gt = 0];
+}
+
+message DescribeSurveyV1Response {
+    Survey survey = 1;
+}
+
+message ListSurveysV1Request {
+}
+
+message ListSurveysV1Response {
+    repeated Survey surveys = 1;
+}
+
+message RemoveSurveyV1Request {
+    uint64 survey_id = 1 [(validate.rules).uint64.gt = 0];
+}
+
+message RemoveSurveyV1Response {
+}

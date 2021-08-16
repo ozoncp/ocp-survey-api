@@ -1,0 +1,226 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/ocp-survey-api/ocp-survey-api.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/surveys": {
+      "get": {
+        "summary": "Возвращает список опросов",
+        "operationId": "OcpSurveyApi_ListSurveysV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiListSurveysV1Response"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "OcpSurveyApi"
+        ]
+      },
+      "post": {
+        "summary": "Создает новый опрос",
+        "operationId": "OcpSurveyApi_CreateSurveyV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiCreateSurveyV1Response"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiCreateSurveyV1Request"
+            }
+          }
+        ],
+        "tags": [
+          "OcpSurveyApi"
+        ]
+      }
+    },
+    "/v1/surveys/{survey_id}": {
+      "get": {
+        "summary": "Возвращает описание опроса по ID",
+        "operationId": "OcpSurveyApi_DescribeSurveyV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiDescribeSurveyV1Response"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "survey_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "OcpSurveyApi"
+        ]
+      },
+      "delete": {
+        "summary": "Удаляет опрос",
+        "operationId": "OcpSurveyApi_RemoveSurveyV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiRemoveSurveyV1Response"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "survey_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "OcpSurveyApi"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "apiCreateSurveyV1Request": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
+    "apiCreateSurveyV1Response": {
+      "type": "object",
+      "properties": {
+        "survey_id": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "apiDescribeSurveyV1Response": {
+      "type": "object",
+      "properties": {
+        "survey": {
+          "$ref": "#/definitions/apiSurvey"
+        }
+      }
+    },
+    "apiListSurveysV1Response": {
+      "type": "object",
+      "properties": {
+        "surveys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiSurvey"
+          }
+        }
+      }
+    },
+    "apiRemoveSurveyV1Response": {
+      "type": "object"
+    },
+    "apiSurvey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "user_id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "link": {
+          "type": "string"
+        }
+      },
+      "title": "Описание опроса"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}
