@@ -35,14 +35,18 @@ func (a *api) CreateSurveyV1(ctx context.Context, in *desc.CreateSurveyV1Request
 		Link:   in.GetLink(),
 	}
 
-	err := a.repo.AddSurvey(ctx, []models.Survey{survey})
+	ids, err := a.repo.AddSurvey(ctx, []models.Survey{survey})
 	if err != nil {
 		log.Error().Err(err).Msg("Create survey: failed")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	// TODO should return new Survey ID
-	return &desc.CreateSurveyV1Response{}, nil
+	res := &desc.CreateSurveyV1Response{}
+	if len(ids) > 0 {
+		res.SurveyId = ids[0]
+	}
+
+	return res, nil
 }
 
 func (a *api) DescribeSurveyV1(ctx context.Context, in *desc.DescribeSurveyV1Request) (*desc.DescribeSurveyV1Response, error) {

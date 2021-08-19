@@ -36,11 +36,12 @@ func (m *MockRepo) EXPECT() *MockRepoMockRecorder {
 }
 
 // AddSurvey mocks base method.
-func (m *MockRepo) AddSurvey(arg0 context.Context, arg1 []models.Survey) error {
+func (m *MockRepo) AddSurvey(arg0 context.Context, arg1 []models.Survey) ([]uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddSurvey", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AddSurvey indicates an expected call of AddSurvey.

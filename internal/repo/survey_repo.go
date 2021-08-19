@@ -19,24 +19,28 @@ func NewSurveyRepo(db *sqlx.DB) Repo {
 	}
 }
 
-func (r *surveyRepo) AddSurvey(ctx context.Context, surveys []models.Survey) error {
+func (r *surveyRepo) AddSurvey(ctx context.Context, surveys []models.Survey) ([]uint64, error) {
 	query := `INSERT INTO surveys (user_id, link) 
-			VALUES ($1, $2);`
+			VALUES ($1, $2) RETURNING id;`
 
 	prep, err := r.db.PrepareContext(ctx, query)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer prep.Close()
 
-	for _, survey := range surveys {
-		_, err := prep.ExecContext(ctx, survey.UserId, survey.Link)
+	ids := make([]uint64, len(surveys))
+	for idx, survey := range surveys {
+		var newId uint64
+		row := prep.QueryRowContext(ctx, survey.UserId, survey.Link)
+		err := row.Scan(&newId)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		ids[idx] = newId
 	}
 
-	return nil
+	return ids, nil
 }
 
 func (r *surveyRepo) ListSurveys(ctx context.Context, limit, offset uint64) ([]models.Survey, error) {

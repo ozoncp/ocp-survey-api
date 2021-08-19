@@ -34,7 +34,7 @@ func (f *flusher) Flush(surveys []models.Survey) []models.Survey {
 	}
 
 	for chunkIdx := range chunks {
-		err := f.surveyRepo.AddSurvey(context.TODO(), chunks[chunkIdx])
+		_, err := f.surveyRepo.AddSurvey(context.TODO(), chunks[chunkIdx])
 		if err != nil {
 			return surveys[f.chunkSize*chunkIdx:]
 		}

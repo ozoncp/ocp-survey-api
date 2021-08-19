@@ -88,7 +88,7 @@ var _ = Describe("Flusher", func() {
 					gomock.InOrder(
 						mockRepo.EXPECT().AddSurvey(context.TODO(), data[:2]),
 						mockRepo.EXPECT().AddSurvey(context.TODO(), data[2:4]),
-						mockRepo.EXPECT().AddSurvey(context.TODO(), data[4:6]).Return(fmt.Errorf("repo error")),
+						mockRepo.EXPECT().AddSurvey(context.TODO(), data[4:6]).Return(nil, fmt.Errorf("repo error")),
 					)
 
 					r := f.Flush(data)
@@ -100,7 +100,7 @@ var _ = Describe("Flusher", func() {
 				It("should return all items", func() {
 					f := flusher.New(4, mockRepo)
 
-					mockRepo.EXPECT().AddSurvey(context.TODO(), data[:4]).Return(fmt.Errorf("repo error"))
+					mockRepo.EXPECT().AddSurvey(context.TODO(), data[:4]).Return(nil, fmt.Errorf("repo error"))
 
 					r := f.Flush(data)
 					Expect(r).Should(BeEquivalentTo(data))
