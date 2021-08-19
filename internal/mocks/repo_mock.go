@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,45 +36,59 @@ func (m *MockRepo) EXPECT() *MockRepoMockRecorder {
 }
 
 // AddSurvey mocks base method.
-func (m *MockRepo) AddSurvey(arg0 []models.Survey) error {
+func (m *MockRepo) AddSurvey(arg0 context.Context, arg1 []models.Survey) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddSurvey", arg0)
+	ret := m.ctrl.Call(m, "AddSurvey", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddSurvey indicates an expected call of AddSurvey.
-func (mr *MockRepoMockRecorder) AddSurvey(arg0 interface{}) *gomock.Call {
+func (mr *MockRepoMockRecorder) AddSurvey(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSurvey", reflect.TypeOf((*MockRepo)(nil).AddSurvey), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSurvey", reflect.TypeOf((*MockRepo)(nil).AddSurvey), arg0, arg1)
 }
 
 // DescribeSurvey mocks base method.
-func (m *MockRepo) DescribeSurvey(arg0 uint64) (*models.Survey, error) {
+func (m *MockRepo) DescribeSurvey(arg0 context.Context, arg1 uint64) (*models.Survey, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DescribeSurvey", arg0)
+	ret := m.ctrl.Call(m, "DescribeSurvey", arg0, arg1)
 	ret0, _ := ret[0].(*models.Survey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DescribeSurvey indicates an expected call of DescribeSurvey.
-func (mr *MockRepoMockRecorder) DescribeSurvey(arg0 interface{}) *gomock.Call {
+func (mr *MockRepoMockRecorder) DescribeSurvey(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeSurvey", reflect.TypeOf((*MockRepo)(nil).DescribeSurvey), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeSurvey", reflect.TypeOf((*MockRepo)(nil).DescribeSurvey), arg0, arg1)
 }
 
 // ListSurveys mocks base method.
-func (m *MockRepo) ListSurveys(arg0, arg1 uint64) ([]models.Survey, error) {
+func (m *MockRepo) ListSurveys(arg0 context.Context, arg1, arg2 uint64) ([]models.Survey, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListSurveys", arg0, arg1)
+	ret := m.ctrl.Call(m, "ListSurveys", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]models.Survey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListSurveys indicates an expected call of ListSurveys.
-func (mr *MockRepoMockRecorder) ListSurveys(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockRepoMockRecorder) ListSurveys(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSurveys", reflect.TypeOf((*MockRepo)(nil).ListSurveys), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSurveys", reflect.TypeOf((*MockRepo)(nil).ListSurveys), arg0, arg1, arg2)
+}
+
+// RemoveSurvey mocks base method.
+func (m *MockRepo) RemoveSurvey(arg0 context.Context, arg1 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveSurvey", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveSurvey indicates an expected call of RemoveSurvey.
+func (mr *MockRepoMockRecorder) RemoveSurvey(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveSurvey", reflect.TypeOf((*MockRepo)(nil).RemoveSurvey), arg0, arg1)
 }

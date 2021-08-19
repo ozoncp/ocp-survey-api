@@ -1,6 +1,7 @@
 package flusher_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/golang/mock/gomock"
@@ -57,8 +58,8 @@ var _ = Describe("Flusher", func() {
 					f := flusher.New(4, mockRepo)
 
 					gomock.InOrder(
-						mockRepo.EXPECT().AddSurvey(data[:4]),
-						mockRepo.EXPECT().AddSurvey(data[4:]),
+						mockRepo.EXPECT().AddSurvey(context.TODO(), data[:4]),
+						mockRepo.EXPECT().AddSurvey(context.TODO(), data[4:]),
 					)
 
 					r := f.Flush(data)
@@ -70,7 +71,7 @@ var _ = Describe("Flusher", func() {
 				It("should flush all items", func() {
 					f := flusher.New(4, mockRepo)
 
-					mockRepo.EXPECT().AddSurvey(data[:3])
+					mockRepo.EXPECT().AddSurvey(context.TODO(), data[:3])
 
 					r := f.Flush(data[:3])
 					Expect(r).Should(BeNil())
@@ -85,9 +86,9 @@ var _ = Describe("Flusher", func() {
 					f := flusher.New(2, mockRepo)
 
 					gomock.InOrder(
-						mockRepo.EXPECT().AddSurvey(data[:2]),
-						mockRepo.EXPECT().AddSurvey(data[2:4]),
-						mockRepo.EXPECT().AddSurvey(data[4:6]).Return(fmt.Errorf("repo error")),
+						mockRepo.EXPECT().AddSurvey(context.TODO(), data[:2]),
+						mockRepo.EXPECT().AddSurvey(context.TODO(), data[2:4]),
+						mockRepo.EXPECT().AddSurvey(context.TODO(), data[4:6]).Return(fmt.Errorf("repo error")),
 					)
 
 					r := f.Flush(data)
@@ -99,7 +100,7 @@ var _ = Describe("Flusher", func() {
 				It("should return all items", func() {
 					f := flusher.New(4, mockRepo)
 
-					mockRepo.EXPECT().AddSurvey(data[:4]).Return(fmt.Errorf("repo error"))
+					mockRepo.EXPECT().AddSurvey(context.TODO(), data[:4]).Return(fmt.Errorf("repo error"))
 
 					r := f.Flush(data)
 					Expect(r).Should(BeEquivalentTo(data))
