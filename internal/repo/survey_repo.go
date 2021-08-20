@@ -23,9 +23,22 @@ func (r *surveyRepo) AddSurvey(ctx context.Context, surveys []models.Survey) ([]
 	query := `INSERT INTO surveys (user_id, link) 
 			VALUES ($1, $2) RETURNING id;`
 
-	prep, err := r.db.PrepareContext(ctx, query)
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	rollback := func(e error) error {
+		err := tx.Rollback()
+		if err != nil {
+			return errors.New("rollback: " + err.Error() + "; previous error: " + e.Error())
+		}
+		return e
+	}
+
+	prep, err := r.db.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, rollback(err)
 	}
 	defer prep.Close()
 
@@ -33,11 +46,14 @@ func (r *surveyRepo) AddSurvey(ctx context.Context, surveys []models.Survey) ([]
 	for idx, survey := range surveys {
 		var newId uint64
 		row := prep.QueryRowContext(ctx, survey.UserId, survey.Link)
-		err := row.Scan(&newId)
-		if err != nil {
-			return nil, err
+		if err := row.Scan(&newId); err != nil {
+			return nil, rollback(err)
 		}
 		ids[idx] = newId
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, rollback(err)
 	}
 
 	return ids, nil
