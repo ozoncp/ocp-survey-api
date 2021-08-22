@@ -64,6 +64,73 @@ var _ = Describe("Survey Service API", func() {
 		})
 	})
 
+	Describe("MultiCreateSurveyV1", func() {
+
+		When("multiple items passed", func() {
+			It("should store items to repo", func() {
+				data := []*desc.CreateSurveyV1Request{
+					{UserId: 1, Link: "http://api.test/survey/1"},
+					{UserId: 2, Link: "http://api.test/survey/2"},
+					{UserId: 3, Link: "http://api.test/survey/3"},
+				}
+				req := desc.MultiCreateSurveyV1Request{
+					Surveys: data,
+				}
+
+				sqlm.ExpectBegin()
+				prep := sqlm.ExpectPrepare("INSERT INTO surveys")
+				for idx, item := range data {
+					prep.ExpectQuery().
+						WithArgs(item.UserId, item.Link).
+						WillReturnRows(sqlm.NewRows([]string{"id"}).AddRow(idx + 1))
+				}
+				sqlm.ExpectCommit()
+
+				resp, err := srv.MultiCreateSurveyV1(ctx, &req)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(resp).ShouldNot(BeNil())
+				Expect(resp.GetSurveyIds()).Should(BeEquivalentTo([]uint64{1, 2, 3}))
+
+				Expect(sqlm.ExpectationsWereMet()).ShouldNot(HaveOccurred())
+			})
+		})
+
+		When("single item passed", func() {
+			It("should store item to repo", func() {
+				data := &desc.CreateSurveyV1Request{
+					UserId: 1,
+					Link:   "http://api.test/survey/1",
+				}
+				req := desc.MultiCreateSurveyV1Request{
+					Surveys: []*desc.CreateSurveyV1Request{data},
+				}
+
+				sqlm.ExpectQuery("INSERT INTO surveys").
+					WithArgs(data.UserId, data.Link).
+					WillReturnRows(sqlm.NewRows([]string{"id"}).AddRow(1))
+
+				resp, err := srv.MultiCreateSurveyV1(ctx, &req)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(resp).ShouldNot(BeNil())
+				Expect(resp.GetSurveyIds()).Should(BeEquivalentTo([]uint64{1}))
+
+				Expect(sqlm.ExpectationsWereMet()).ShouldNot(HaveOccurred())
+			})
+		})
+
+		When("no items passed", func() {
+			It("should return error", func() {
+				req := desc.MultiCreateSurveyV1Request{}
+
+				resp, err := srv.MultiCreateSurveyV1(ctx, &req)
+				Expect(err).Should(HaveOccurred())
+				Expect(resp.GetSurveyIds()).Should(BeEmpty())
+
+				Expect(sqlm.ExpectationsWereMet()).ShouldNot(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("DescribeSurveyV1", func() {
 
 		When("specified ID exists", func() {
@@ -154,6 +221,49 @@ var _ = Describe("Survey Service API", func() {
 				resp, err := srv.ListSurveysV1(ctx, req)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(resp.Surveys).Should(BeEmpty())
+
+				Expect(sqlm.ExpectationsWereMet()).ShouldNot(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("UpdateSurveyV1", func() {
+
+		When("updating existing survey", func() {
+			It("should update data in repo", func() {
+				data := &desc.Survey{
+					Id:     1,
+					UserId: 20,
+					Link:   "http://api.test/survey/2",
+				}
+				req := &desc.UpdateSurveyV1Request{Survey: data}
+
+				sqlm.ExpectExec("UPDATE surveys").
+					WithArgs(data.Id, data.UserId, data.Link).
+					WillReturnResult(sqlmock.NewResult(0, 1))
+
+				_, err := srv.UpdateSurveyV1(ctx, req)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				Expect(sqlm.ExpectationsWereMet()).ShouldNot(HaveOccurred())
+			})
+		})
+
+		When("updating non-existing survey", func() {
+			It("should return error", func() {
+				data := &desc.Survey{
+					Id:     1,
+					UserId: 20,
+					Link:   "http://api.test/survey/2",
+				}
+				req := &desc.UpdateSurveyV1Request{Survey: data}
+
+				sqlm.ExpectExec("UPDATE surveys").
+					WithArgs(data.Id, data.UserId, data.Link).
+					WillReturnResult(sqlmock.NewResult(0, 0))
+
+				_, err := srv.UpdateSurveyV1(ctx, req)
+				Expect(err).Should(HaveOccurred())
 
 				Expect(sqlm.ExpectationsWereMet()).ShouldNot(HaveOccurred())
 			})

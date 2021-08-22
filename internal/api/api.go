@@ -49,6 +49,38 @@ func (a *api) CreateSurveyV1(ctx context.Context, in *desc.CreateSurveyV1Request
 	return res, nil
 }
 
+func (a *api) MultiCreateSurveyV1(ctx context.Context, in *desc.MultiCreateSurveyV1Request) (*desc.MultiCreateSurveyV1Response, error) {
+	log.Info().
+		Int("num_items", len(in.GetSurveys())).
+		Msg("Multi create survey request")
+
+	inSurveys := in.GetSurveys()
+	if len(inSurveys) == 0 {
+		log.Error().Msg("Multi create survey: no surveys passed")
+		return nil, status.Error(codes.InvalidArgument, "no surveys to store")
+	}
+
+	surveys := make([]models.Survey, 0, len(inSurveys))
+	for _, item := range inSurveys {
+		survey := models.Survey{
+			UserId: item.GetUserId(),
+			Link:   item.GetLink(),
+		}
+		surveys = append(surveys, survey)
+	}
+
+	ids, err := a.repo.AddSurvey(ctx, surveys)
+	if err != nil {
+		log.Error().Err(err).Msg("Multi create survey: failed")
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	res := &desc.MultiCreateSurveyV1Response{
+		SurveyIds: ids,
+	}
+	return res, nil
+}
+
 func (a *api) DescribeSurveyV1(ctx context.Context, in *desc.DescribeSurveyV1Request) (*desc.DescribeSurveyV1Response, error) {
 	log.Info().
 		Uint64("survey_id", in.GetSurveyId()).
@@ -95,6 +127,31 @@ func (a *api) ListSurveysV1(ctx context.Context, in *desc.ListSurveysV1Request) 
 	}
 
 	return res, nil
+}
+
+func (a *api) UpdateSurveyV1(ctx context.Context, in *desc.UpdateSurveyV1Request) (*desc.UpdateSurveyV1Response, error) {
+	log.Info().
+		Uint64("survey_id", in.GetSurvey().GetId()).
+		Uint64("user_id", in.GetSurvey().GetUserId()).
+		Str("link", in.GetSurvey().GetLink()).
+		Msg("Update survey request")
+
+	inSurvey := in.GetSurvey()
+	survey := models.Survey{
+		Id:     inSurvey.GetId(),
+		UserId: inSurvey.GetUserId(),
+		Link:   inSurvey.GetLink(),
+	}
+
+	err := a.repo.UpdateSurvey(ctx, survey)
+	if errors.Is(err, repo.ErrNotFound) {
+		return nil, status.Error(codes.NotFound, "survey id not found")
+	} else if err != nil {
+		log.Error().Err(err).Msg("Describe survey: failed")
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	return &desc.UpdateSurveyV1Response{}, nil
 }
 
 func (a *api) RemoveSurveyV1(ctx context.Context, in *desc.RemoveSurveyV1Request) (*desc.RemoveSurveyV1Response, error) {
