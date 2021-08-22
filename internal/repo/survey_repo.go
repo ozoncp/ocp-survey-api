@@ -20,8 +20,22 @@ func NewSurveyRepo(db *sqlx.DB) Repo {
 }
 
 func (r *surveyRepo) AddSurvey(ctx context.Context, surveys []models.Survey) ([]uint64, error) {
+	if len(surveys) == 0 {
+		return nil, errors.New("no data to add")
+	}
+
 	query := `INSERT INTO surveys (user_id, link) 
 			VALUES ($1, $2) RETURNING id;`
+
+	if len(surveys) == 1 {
+		row := r.db.QueryRowContext(ctx, query, surveys[0].UserId, surveys[0].Link)
+
+		var newId uint64
+		if err := row.Scan(&newId); err != nil {
+			return nil, err
+		}
+		return []uint64{newId}, nil
+	}
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {

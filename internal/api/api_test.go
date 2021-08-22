@@ -51,11 +51,9 @@ var _ = Describe("Survey Service API", func() {
 				Link:   "http://api.test/survey/1",
 			}
 
-			sqlm.ExpectBegin()
-			prep := sqlm.ExpectPrepare("INSERT INTO surveys")
-			prep.ExpectQuery().WithArgs(data.UserId, data.Link).
+			sqlm.ExpectQuery("INSERT INTO surveys").
+				WithArgs(data.UserId, data.Link).
 				WillReturnRows(sqlm.NewRows([]string{"id"}).AddRow(1))
-			sqlm.ExpectCommit()
 
 			resp, err := srv.CreateSurveyV1(ctx, data)
 			Expect(err).ShouldNot(HaveOccurred())
