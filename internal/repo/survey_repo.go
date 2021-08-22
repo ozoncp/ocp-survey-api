@@ -122,6 +122,28 @@ func (r *surveyRepo) DescribeSurvey(ctx context.Context, surveyId uint64) (*mode
 	return nil, ErrNotFound
 }
 
+func (r *surveyRepo) UpdateSurvey(ctx context.Context, survey models.Survey) error {
+	query := `UPDATE surveys
+			SET user_id=$2, link=$3
+			WHERE id=$1;`
+
+	res, err := r.db.ExecContext(ctx, query, survey.Id, survey.UserId, survey.Link)
+	if err != nil {
+		return err
+	}
+
+	num, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if num == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
 func (r *surveyRepo) RemoveSurvey(ctx context.Context, surveyId uint64) error {
 	query := `DELETE FROM surveys WHERE id=$1;`
 
