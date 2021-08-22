@@ -79,6 +79,70 @@
         "tags": [
           "OcpSurveyApi"
         ]
+      },
+      "put": {
+        "summary": "Обновляет существующий опрос",
+        "operationId": "OcpSurveyApi_UpdateSurveyV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiUpdateSurveyV1Response"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiUpdateSurveyV1Request"
+            }
+          }
+        ],
+        "tags": [
+          "OcpSurveyApi"
+        ]
+      }
+    },
+    "/v1/surveys/batch": {
+      "post": {
+        "summary": "Создает несколько новых опросов",
+        "operationId": "OcpSurveyApi_MultiCreateSurveyV1",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiMultiCreateSurveyV1Response"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiMultiCreateSurveyV1Request"
+            }
+          }
+        ],
+        "tags": [
+          "OcpSurveyApi"
+        ]
       }
     },
     "/v1/surveys/{survey_id}": {
@@ -185,6 +249,29 @@
         }
       }
     },
+    "apiMultiCreateSurveyV1Request": {
+      "type": "object",
+      "properties": {
+        "surveys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiCreateSurveyV1Request"
+          }
+        }
+      }
+    },
+    "apiMultiCreateSurveyV1Response": {
+      "type": "object",
+      "properties": {
+        "survey_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uint64"
+          }
+        }
+      }
+    },
     "apiRemoveSurveyV1Response": {
       "type": "object"
     },
@@ -204,6 +291,17 @@
         }
       },
       "title": "Описание опроса"
+    },
+    "apiUpdateSurveyV1Request": {
+      "type": "object",
+      "properties": {
+        "survey": {
+          "$ref": "#/definitions/apiSurvey"
+        }
+      }
+    },
+    "apiUpdateSurveyV1Response": {
+      "type": "object"
     },
     "protobufAny": {
       "type": "object",
