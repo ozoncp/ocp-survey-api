@@ -35,7 +35,7 @@ var _ = Describe("Survey Service API", func() {
 		sqlm = sqlmck
 		db = sqlx.NewDb(sqldb, "")
 		rep = repo.NewSurveyRepo(db)
-		srv = api.NewOcpSurveyApi(rep)
+		srv = api.NewOcpSurveyApi(rep, 2)
 	})
 
 	AfterEach(func() {
@@ -79,17 +79,54 @@ var _ = Describe("Survey Service API", func() {
 
 				sqlm.ExpectBegin()
 				prep := sqlm.ExpectPrepare("INSERT INTO surveys")
-				for idx, item := range data {
-					prep.ExpectQuery().
-						WithArgs(item.UserId, item.Link).
-						WillReturnRows(sqlm.NewRows([]string{"id"}).AddRow(idx + 1))
-				}
+				prep.ExpectQuery().
+					WithArgs(data[0].UserId, data[0].Link).
+					WillReturnRows(sqlm.NewRows([]string{"id"}).AddRow(1))
+				prep.ExpectQuery().
+					WithArgs(data[1].UserId, data[1].Link).
+					WillReturnRows(sqlm.NewRows([]string{"id"}).AddRow(2))
 				sqlm.ExpectCommit()
+				sqlm.ExpectQuery("INSERT INTO surveys").
+					WithArgs(data[2].UserId, data[2].Link).
+					WillReturnRows(sqlm.NewRows([]string{"id"}).AddRow(3))
 
 				resp, err := srv.MultiCreateSurveyV1(ctx, &req)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(resp).ShouldNot(BeNil())
 				Expect(resp.GetSurveyIds()).Should(BeEquivalentTo([]uint64{1, 2, 3}))
+
+				Expect(sqlm.ExpectationsWereMet()).ShouldNot(HaveOccurred())
+			})
+		})
+
+		When("store to repo partially failed", func() {
+			It("should return IDs of stored items", func() {
+				data := []*desc.CreateSurveyV1Request{
+					{UserId: 1, Link: "http://api.test/survey/1"},
+					{UserId: 2, Link: "http://api.test/survey/2"},
+					{UserId: 3, Link: "http://api.test/survey/3"},
+				}
+				req := desc.MultiCreateSurveyV1Request{
+					Surveys: data,
+				}
+
+				sqlm.ExpectBegin()
+				prep := sqlm.ExpectPrepare("INSERT INTO surveys")
+				prep.ExpectQuery().
+					WithArgs(data[0].UserId, data[0].Link).
+					WillReturnRows(sqlm.NewRows([]string{"id"}).AddRow(1))
+				prep.ExpectQuery().
+					WithArgs(data[1].UserId, data[1].Link).
+					WillReturnRows(sqlm.NewRows([]string{"id"}).AddRow(2))
+				sqlm.ExpectCommit()
+				sqlm.ExpectQuery("INSERT INTO surveys").
+					WithArgs(data[2].UserId, data[2].Link).
+					WillReturnError(sql.ErrNoRows)
+
+				resp, err := srv.MultiCreateSurveyV1(ctx, &req)
+				Expect(err).Should(HaveOccurred())
+				Expect(resp).ShouldNot(BeNil())
+				Expect(resp.GetSurveyIds()).Should(BeEquivalentTo([]uint64{1, 2}))
 
 				Expect(sqlm.ExpectationsWereMet()).ShouldNot(HaveOccurred())
 			})

@@ -31,6 +31,8 @@ const (
 	dbHost = "localhost"
 	dbPort = "5432"
 	dbName = "postgres"
+
+	chunkSize = 32
 )
 
 // regSignalHandler отменяет контекст при получении сигналов SIGQUIT, SIGINT, SIGTERM.
@@ -87,7 +89,7 @@ func runGRPC(ctx context.Context, repo repo.Repo) error {
 	}
 
 	srv := grpc.NewServer()
-	desc.RegisterOcpSurveyApiServer(srv, api.NewOcpSurveyApi(repo))
+	desc.RegisterOcpSurveyApiServer(srv, api.NewOcpSurveyApi(repo, chunkSize))
 
 	srvErr := make(chan error)
 	go func() {

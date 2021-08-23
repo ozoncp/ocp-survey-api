@@ -10,17 +10,20 @@ import (
 
 	"github.com/ozoncp/ocp-survey-api/internal/models"
 	"github.com/ozoncp/ocp-survey-api/internal/repo"
+	"github.com/ozoncp/ocp-survey-api/internal/utils"
 	desc "github.com/ozoncp/ocp-survey-api/pkg/ocp-survey-api"
 )
 
 type api struct {
 	desc.UnimplementedOcpSurveyApiServer
-	repo repo.Repo
+	repo      repo.Repo
+	chunkSize int
 }
 
-func NewOcpSurveyApi(repo repo.Repo) desc.OcpSurveyApiServer {
+func NewOcpSurveyApi(repo repo.Repo, chunkSize int) desc.OcpSurveyApiServer {
 	return &api{
-		repo: repo,
+		repo:      repo,
+		chunkSize: chunkSize,
 	}
 }
 
@@ -69,10 +72,26 @@ func (a *api) MultiCreateSurveyV1(ctx context.Context, in *desc.MultiCreateSurve
 		surveys = append(surveys, survey)
 	}
 
-	ids, err := a.repo.AddSurvey(ctx, surveys)
+	ids := make([]uint64, 0, len(surveys))
+	chunks, err := utils.SplitToChunks(surveys, a.chunkSize)
 	if err != nil {
-		log.Error().Err(err).Msg("Multi create survey: failed")
+		log.Error().Err(err).Msg("Multi create survey: split to chunks failed")
 		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	for idx, chunk := range chunks {
+		newIds, err := a.repo.AddSurvey(ctx, chunk)
+		if err != nil {
+			log.Error().
+				Int("chunk", idx).
+				Err(err).
+				Msg("Multi create survey: failed")
+			res := &desc.MultiCreateSurveyV1Response{
+				SurveyIds: ids,
+			}
+			return res, status.Error(codes.Internal, "internal error")
+		}
+		ids = append(ids, newIds...)
 	}
 
 	res := &desc.MultiCreateSurveyV1Response{
@@ -130,13 +149,14 @@ func (a *api) ListSurveysV1(ctx context.Context, in *desc.ListSurveysV1Request) 
 }
 
 func (a *api) UpdateSurveyV1(ctx context.Context, in *desc.UpdateSurveyV1Request) (*desc.UpdateSurveyV1Response, error) {
+	inSurvey := in.GetSurvey()
+
 	log.Info().
-		Uint64("survey_id", in.GetSurvey().GetId()).
-		Uint64("user_id", in.GetSurvey().GetUserId()).
-		Str("link", in.GetSurvey().GetLink()).
+		Uint64("survey_id", inSurvey.GetId()).
+		Uint64("user_id", inSurvey.GetUserId()).
+		Str("link", inSurvey.GetLink()).
 		Msg("Update survey request")
 
-	inSurvey := in.GetSurvey()
 	survey := models.Survey{
 		Id:     inSurvey.GetId(),
 		UserId: inSurvey.GetUserId(),
