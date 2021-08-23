@@ -34,5 +34,5 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /home/developer/go/src/github.com/ozoncp/ocp-survey-api/bin/ocp-survey-api .
 RUN chown root:root ocp-survey-api
-EXPOSE 8080 8082
+EXPOSE 8080 8082 9100
 CMD ["./ocp-survey-api"]
