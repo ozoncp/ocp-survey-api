@@ -34,6 +34,7 @@ PHONY: .generate
 		mv pkg/ocp-survey-api/github.com/ozoncp/ocp-survey-api/pkg/ocp-survey-api/* pkg/ocp-survey-api/
 		rm -rf pkg/ocp-survey-api/github.com
 		mkdir -p cmd/ocp-survey-api
+		go generate internal/mockgen.go
 
 
 .PHONY: install
