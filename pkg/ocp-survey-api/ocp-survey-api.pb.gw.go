@@ -121,9 +121,20 @@ func local_request_OcpSurveyApi_DescribeSurveyV1_0(ctx context.Context, marshale
 
 }
 
+var (
+	filter_OcpSurveyApi_ListSurveysV1_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
 func request_OcpSurveyApi_ListSurveysV1_0(ctx context.Context, marshaler runtime.Marshaler, client OcpSurveyApiClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListSurveysV1Request
 	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_OcpSurveyApi_ListSurveysV1_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
 
 	msg, err := client.ListSurveysV1(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -133,6 +144,13 @@ func request_OcpSurveyApi_ListSurveysV1_0(ctx context.Context, marshaler runtime
 func local_request_OcpSurveyApi_ListSurveysV1_0(ctx context.Context, marshaler runtime.Marshaler, server OcpSurveyApiServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListSurveysV1Request
 	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_OcpSurveyApi_ListSurveysV1_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
 
 	msg, err := server.ListSurveysV1(ctx, &protoReq)
 	return msg, metadata, err

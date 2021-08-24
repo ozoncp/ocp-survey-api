@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -9,11 +10,14 @@ import (
 	"syscall"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 
 	"github.com/ozoncp/ocp-survey-api/internal/api"
+	"github.com/ozoncp/ocp-survey-api/internal/repo"
 	desc "github.com/ozoncp/ocp-survey-api/pkg/ocp-survey-api"
 )
 
@@ -21,6 +25,12 @@ const (
 	grpcPort     = ":8082"
 	httpPort     = ":8080"
 	grpcEndpoint = "localhost" + grpcPort
+
+	dbUser = "postgres"
+	dbPass = "postgres"
+	dbHost = "localhost"
+	dbPort = "5432"
+	dbName = "postgres"
 )
 
 // regSignalHandler отменяет контекст при получении сигналов SIGQUIT, SIGINT, SIGTERM.
@@ -40,17 +50,36 @@ func regSignalHandler(ctx context.Context) context.Context {
 	return ctx
 }
 
-// run запускает gRPC-сервер и JSON-gateway к нему.
+// run запускает сервис.
 // При отмене контекста ctx будет выполнен graceful stop.
 func run(ctx context.Context) error {
+	repo, err := getRepo()
+	if err != nil {
+		return err
+	}
+
 	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error { return runGRPC(ctx) })
+	g.Go(func() error { return runGRPC(ctx, repo) })
 	g.Go(func() error { return runJSON(ctx) })
 
 	return g.Wait()
 }
 
-func runGRPC(ctx context.Context) error {
+func getRepo() (repo.Repo, error) {
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		dbUser, dbPass, dbHost, dbPort, dbName)
+
+	db, err := sqlx.Open("pgx", dsn)
+	if err != nil {
+		log.Error().Err(err).Msg("DB: Connect")
+		return nil, err
+	}
+
+	repo := repo.NewSurveyRepo(db)
+	return repo, nil
+}
+
+func runGRPC(ctx context.Context, repo repo.Repo) error {
 	listen, err := net.Listen("tcp", grpcPort)
 	if err != nil {
 		log.Error().Err(err).Msg("GRPC: Listen")
@@ -58,7 +87,7 @@ func runGRPC(ctx context.Context) error {
 	}
 
 	srv := grpc.NewServer()
-	desc.RegisterOcpSurveyApiServer(srv, api.NewOcpSurveyApi())
+	desc.RegisterOcpSurveyApiServer(srv, api.NewOcpSurveyApi(repo))
 
 	srvErr := make(chan error)
 	go func() {

@@ -1,6 +1,8 @@
 package flusher
 
 import (
+	"context"
+
 	"github.com/ozoncp/ocp-survey-api/internal/models"
 	"github.com/ozoncp/ocp-survey-api/internal/repo"
 	"github.com/ozoncp/ocp-survey-api/internal/utils"
@@ -32,7 +34,7 @@ func (f *flusher) Flush(surveys []models.Survey) []models.Survey {
 	}
 
 	for chunkIdx := range chunks {
-		err := f.surveyRepo.AddSurvey(chunks[chunkIdx])
+		_, err := f.surveyRepo.AddSurvey(context.TODO(), chunks[chunkIdx])
 		if err != nil {
 			return surveys[f.chunkSize*chunkIdx:]
 		}

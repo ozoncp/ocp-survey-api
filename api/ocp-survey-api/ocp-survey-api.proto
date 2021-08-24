@@ -66,6 +66,8 @@ message DescribeSurveyV1Response {
 }
 
 message ListSurveysV1Request {
+    uint64 limit = 1;
+    uint64 offset = 2;
 }
 
 message ListSurveysV1Response {
