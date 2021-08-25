@@ -43,21 +43,28 @@ func NewOcpSurveyApi(
 	}
 }
 
+const (
+	logMethodKey  = "method_name"
+	producerTopic = "survey_events"
+)
+
 func (a *api) reportEvent(typ producer.EventType, survey_id uint64) {
 	ev := producer.PrepareEvent(typ, survey_id)
-	err := a.prod.Send("survey_events", ev)
+	err := a.prod.Send(producerTopic, ev)
 	if err != nil {
 		log.Error().Err(err).Msg("Producer: Send event")
 	}
 }
 
 func (a *api) CreateSurveyV1(ctx context.Context, in *desc.CreateSurveyV1Request) (*desc.CreateSurveyV1Response, error) {
+	methodName := "CreateSurveyV1"
 	log.Info().
+		Str(logMethodKey, methodName).
 		Uint64("user_id", in.GetUserId()).
 		Str("link", in.GetLink()).
 		Msg("Create survey request")
 
-	span := a.tracer.StartSpan("CreateSurveyV1")
+	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
 	survey := models.Survey{
@@ -67,7 +74,7 @@ func (a *api) CreateSurveyV1(ctx context.Context, in *desc.CreateSurveyV1Request
 
 	ids, err := a.repo.AddSurvey(ctx, []models.Survey{survey})
 	if err != nil {
-		log.Error().Err(err).Msg("Create survey: failed")
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("repo: add failed")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -82,11 +89,13 @@ func (a *api) CreateSurveyV1(ctx context.Context, in *desc.CreateSurveyV1Request
 }
 
 func (a *api) MultiCreateSurveyV1(ctx context.Context, in *desc.MultiCreateSurveyV1Request) (*desc.MultiCreateSurveyV1Response, error) {
+	methodName := "MultiCreateSurveyV1"
 	log.Info().
+		Str(logMethodKey, methodName).
 		Int("num_items", len(in.GetSurveys())).
 		Msg("Multi create survey request")
 
-	span := a.tracer.StartSpan("MultiCreateSurveyV1")
+	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
 	inSurveys := in.GetSurveys()
@@ -107,7 +116,7 @@ func (a *api) MultiCreateSurveyV1(ctx context.Context, in *desc.MultiCreateSurve
 	ids := make([]uint64, 0, len(surveys))
 	chunks, err := utils.SplitToChunks(surveys, a.chunk)
 	if err != nil {
-		log.Error().Err(err).Msg("Multi create survey: split to chunks failed")
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("split to chunks failed")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -122,9 +131,10 @@ func (a *api) MultiCreateSurveyV1(ctx context.Context, in *desc.MultiCreateSurve
 		newIds, err := addChunk(ctx, chunk)
 		if err != nil {
 			log.Error().
+				Str(logMethodKey, methodName).
 				Int("chunk", idx).
 				Err(err).
-				Msg("Multi create survey: failed")
+				Msg("repo: add chunk failed")
 			res := &desc.MultiCreateSurveyV1Response{
 				SurveyIds: ids,
 			}
@@ -145,18 +155,20 @@ func (a *api) MultiCreateSurveyV1(ctx context.Context, in *desc.MultiCreateSurve
 }
 
 func (a *api) DescribeSurveyV1(ctx context.Context, in *desc.DescribeSurveyV1Request) (*desc.DescribeSurveyV1Response, error) {
+	methodName := "DescribeSurveyV1"
 	log.Info().
+		Str(logMethodKey, methodName).
 		Uint64("survey_id", in.GetSurveyId()).
 		Msg("Describe survey request")
 
-	span := a.tracer.StartSpan("DescribeSurveyV1")
+	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
 	survey, err := a.repo.DescribeSurvey(ctx, in.GetSurveyId())
 	if errors.Is(err, repo.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, "survey id not found")
 	} else if err != nil {
-		log.Error().Err(err).Msg("Describe survey: failed")
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("repo: describe failed")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -170,17 +182,19 @@ func (a *api) DescribeSurveyV1(ctx context.Context, in *desc.DescribeSurveyV1Req
 }
 
 func (a *api) ListSurveysV1(ctx context.Context, in *desc.ListSurveysV1Request) (*desc.ListSurveysV1Response, error) {
+	methodName := "ListSurveysV1"
 	log.Info().
+		Str(logMethodKey, methodName).
 		Uint64("limit", in.GetLimit()).
 		Uint64("offset", in.GetOffset()).
 		Msg("List surveys request")
 
-	span := a.tracer.StartSpan("ListSurveysV1")
+	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
 	surveys, err := a.repo.ListSurveys(ctx, in.GetLimit(), in.GetOffset())
 	if err != nil {
-		log.Error().Err(err).Msg("List surveys: failed")
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("repo: list failed")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -199,15 +213,17 @@ func (a *api) ListSurveysV1(ctx context.Context, in *desc.ListSurveysV1Request) 
 }
 
 func (a *api) UpdateSurveyV1(ctx context.Context, in *desc.UpdateSurveyV1Request) (*desc.UpdateSurveyV1Response, error) {
+	methodName := "UpdateSurveyV1"
 	inSurvey := in.GetSurvey()
 
 	log.Info().
+		Str(logMethodKey, methodName).
 		Uint64("survey_id", inSurvey.GetId()).
 		Uint64("user_id", inSurvey.GetUserId()).
 		Str("link", inSurvey.GetLink()).
 		Msg("Update survey request")
 
-	span := a.tracer.StartSpan("UpdateSurveyV1")
+	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
 	survey := models.Survey{
@@ -220,7 +236,7 @@ func (a *api) UpdateSurveyV1(ctx context.Context, in *desc.UpdateSurveyV1Request
 	if errors.Is(err, repo.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, "survey id not found")
 	} else if err != nil {
-		log.Error().Err(err).Msg("Describe survey: failed")
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("repo: update failed")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
@@ -231,18 +247,20 @@ func (a *api) UpdateSurveyV1(ctx context.Context, in *desc.UpdateSurveyV1Request
 }
 
 func (a *api) RemoveSurveyV1(ctx context.Context, in *desc.RemoveSurveyV1Request) (*desc.RemoveSurveyV1Response, error) {
+	methodName := "RemoveSurveyV1"
 	log.Info().
+		Str(logMethodKey, methodName).
 		Uint64("survey_id", in.GetSurveyId()).
 		Msg("Remove survey request")
 
-	span := a.tracer.StartSpan("RemoveSurveyV1")
+	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
 	err := a.repo.RemoveSurvey(ctx, in.GetSurveyId())
 	if errors.Is(err, repo.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, "survey id not found")
 	} else if err != nil {
-		log.Error().Err(err).Msg("Remove survey: failed")
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("repo: remove failed")
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
