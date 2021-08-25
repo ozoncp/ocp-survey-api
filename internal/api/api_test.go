@@ -289,7 +289,7 @@ var _ = Describe("Survey Service API", func() {
 		When("no items", func() {
 			It("should return empty response", func() {
 				req := &desc.ListSurveysV1Request{
-					Limit:  0,
+					Limit:  10,
 					Offset: 0,
 				}
 

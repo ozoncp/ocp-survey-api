@@ -29,6 +29,7 @@ PHONY: .generate
 				--grpc-gateway_out=pkg/ocp-survey-api \
 				--grpc-gateway_opt=logtostderr=true \
 				--grpc-gateway_opt=paths=import \
+				--validate_out lang=go:pkg/ocp-survey-api \
 				--swagger_out=allow_merge=true,merge_file_name=api:swagger \
 				api/ocp-survey-api/ocp-survey-api.proto
 		mv pkg/ocp-survey-api/github.com/ozoncp/ocp-survey-api/pkg/ocp-survey-api/* pkg/ocp-survey-api/
@@ -52,7 +53,7 @@ vendor-proto: .vendor-proto
 .vendor-proto:
 		mkdir -p vendor.protogen
 		mkdir -p vendor.protogen/api/ocp-survey-api
-		cp api/ocp-survey-api/ocp-survey-api.proto vendor.protogen/api/ocp-survey-api/ocp-survey-api.proto
+		yes | cp -rf api/ocp-survey-api/ocp-survey-api.proto vendor.protogen/api/ocp-survey-api/ocp-survey-api.proto
 		@if [ ! -d vendor.protogen/google ]; then \
 			git clone https://github.com/googleapis/googleapis vendor.protogen/googleapis &&\
 			mkdir -p  vendor.protogen/google/ &&\
@@ -79,5 +80,7 @@ install-go-deps: .install-go-deps
 		go get -u github.com/golang/protobuf/protoc-gen-go
 		go get -u google.golang.org/grpc
 		go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
+		go get -u github.com/envoyproxy/protoc-gen-validate
 		go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 		go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+		go install github.com/envoyproxy/protoc-gen-validate

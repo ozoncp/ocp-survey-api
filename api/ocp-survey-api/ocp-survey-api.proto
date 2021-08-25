@@ -65,7 +65,7 @@ message Survey {
 }
 
 message CreateSurveyV1Request {
-    uint64 user_id = 1;
+    uint64 user_id = 1 [(validate.rules).uint64.gt = 0];
     string link = 2;
 }
 
@@ -74,7 +74,7 @@ message CreateSurveyV1Response {
 }
 
 message MultiCreateSurveyV1Request {
-    repeated CreateSurveyV1Request surveys = 1;
+    repeated CreateSurveyV1Request surveys = 1 [(validate.rules).repeated.min_items = 1];
 }
 
 message MultiCreateSurveyV1Response {
@@ -90,8 +90,8 @@ message DescribeSurveyV1Response {
 }
 
 message ListSurveysV1Request {
-    uint64 limit = 1;
-    uint64 offset = 2;
+    uint64 limit = 1 [(validate.rules).uint64.gt = 0];
+    uint64 offset = 2 [(validate.rules).uint64.gte = 0];
 }
 
 message ListSurveysV1Response {

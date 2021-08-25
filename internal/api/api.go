@@ -67,6 +67,11 @@ func (a *api) CreateSurveyV1(ctx context.Context, in *desc.CreateSurveyV1Request
 	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
+	if err := in.Validate(); err != nil {
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("validation failed")
+		return nil, status.Error(codes.InvalidArgument, "invalid argument")
+	}
+
 	survey := models.Survey{
 		UserId: in.GetUserId(),
 		Link:   in.GetLink(),
@@ -98,12 +103,12 @@ func (a *api) MultiCreateSurveyV1(ctx context.Context, in *desc.MultiCreateSurve
 	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
-	inSurveys := in.GetSurveys()
-	if len(inSurveys) == 0 {
-		log.Error().Msg("Multi create survey: no surveys passed")
-		return nil, status.Error(codes.InvalidArgument, "no surveys to store")
+	if err := in.Validate(); err != nil {
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("validation failed")
+		return nil, status.Error(codes.InvalidArgument, "invalid argument")
 	}
 
+	inSurveys := in.GetSurveys()
 	surveys := make([]models.Survey, 0, len(inSurveys))
 	for _, item := range inSurveys {
 		survey := models.Survey{
@@ -164,6 +169,11 @@ func (a *api) DescribeSurveyV1(ctx context.Context, in *desc.DescribeSurveyV1Req
 	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
+	if err := in.Validate(); err != nil {
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("validation failed")
+		return nil, status.Error(codes.InvalidArgument, "invalid argument")
+	}
+
 	survey, err := a.repo.DescribeSurvey(ctx, in.GetSurveyId())
 	if errors.Is(err, repo.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, "survey id not found")
@@ -191,6 +201,11 @@ func (a *api) ListSurveysV1(ctx context.Context, in *desc.ListSurveysV1Request) 
 
 	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
+
+	if err := in.Validate(); err != nil {
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("validation failed")
+		return nil, status.Error(codes.InvalidArgument, "invalid argument")
+	}
 
 	surveys, err := a.repo.ListSurveys(ctx, in.GetLimit(), in.GetOffset())
 	if err != nil {
@@ -226,6 +241,11 @@ func (a *api) UpdateSurveyV1(ctx context.Context, in *desc.UpdateSurveyV1Request
 	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
 
+	if err := in.Validate(); err != nil {
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("validation failed")
+		return nil, status.Error(codes.InvalidArgument, "invalid argument")
+	}
+
 	survey := models.Survey{
 		Id:     inSurvey.GetId(),
 		UserId: inSurvey.GetUserId(),
@@ -255,6 +275,11 @@ func (a *api) RemoveSurveyV1(ctx context.Context, in *desc.RemoveSurveyV1Request
 
 	span := a.tracer.StartSpan(methodName)
 	defer span.Finish()
+
+	if err := in.Validate(); err != nil {
+		log.Error().Err(err).Str(logMethodKey, methodName).Msg("validation failed")
+		return nil, status.Error(codes.InvalidArgument, "invalid argument")
+	}
 
 	err := a.repo.RemoveSurvey(ctx, in.GetSurveyId())
 	if errors.Is(err, repo.ErrNotFound) {
