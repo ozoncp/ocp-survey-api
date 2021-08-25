@@ -361,7 +361,7 @@ var _ = Describe("Survey Service API", func() {
 					SurveyId: 1,
 				}
 
-				sqlm.ExpectExec("DELETE FROM surveys").
+				sqlm.ExpectExec("UPDATE surveys").
 					WithArgs(req.SurveyId).
 					WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -382,7 +382,7 @@ var _ = Describe("Survey Service API", func() {
 					SurveyId: 2,
 				}
 
-				sqlm.ExpectExec("DELETE FROM surveys").
+				sqlm.ExpectExec("UPDATE surveys").
 					WithArgs(req.SurveyId).
 					WillReturnResult(sqlmock.NewResult(0, 0))
 

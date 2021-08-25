@@ -75,7 +75,9 @@ func (r *surveyRepo) AddSurvey(ctx context.Context, surveys []models.Survey) ([]
 
 func (r *surveyRepo) ListSurveys(ctx context.Context, limit, offset uint64) ([]models.Survey, error) {
 	query := `SELECT id, user_id, link 
-			FROM surveys LIMIT $1 OFFSET $2;`
+			FROM surveys
+			WHERE deleted IS NOT TRUE
+			LIMIT $1 OFFSET $2;`
 
 	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -103,7 +105,8 @@ func (r *surveyRepo) ListSurveys(ctx context.Context, limit, offset uint64) ([]m
 
 func (r *surveyRepo) DescribeSurvey(ctx context.Context, surveyId uint64) (*models.Survey, error) {
 	query := `SELECT id, user_id, link
-			FROM surveys WHERE id=$1;`
+			FROM surveys WHERE id=$1
+			AND deleted IS NOT TRUE;`
 
 	row := r.db.QueryRowContext(ctx, query, surveyId)
 
@@ -121,7 +124,8 @@ func (r *surveyRepo) DescribeSurvey(ctx context.Context, surveyId uint64) (*mode
 func (r *surveyRepo) UpdateSurvey(ctx context.Context, survey models.Survey) error {
 	query := `UPDATE surveys
 			SET user_id=$2, link=$3
-			WHERE id=$1;`
+			WHERE id=$1
+			AND deleted IS NOT TRUE;`
 
 	res, err := r.db.ExecContext(ctx, query, survey.Id, survey.UserId, survey.Link)
 	if err != nil {
@@ -141,7 +145,10 @@ func (r *surveyRepo) UpdateSurvey(ctx context.Context, survey models.Survey) err
 }
 
 func (r *surveyRepo) RemoveSurvey(ctx context.Context, surveyId uint64) error {
-	query := `DELETE FROM surveys WHERE id=$1;`
+	query := `UPDATE surveys 
+			SET deleted=TRUE
+			WHERE id=$1
+			AND deleted IS NOT TRUE;`
 
 	res, err := r.db.ExecContext(ctx, query, surveyId)
 	if err != nil {
