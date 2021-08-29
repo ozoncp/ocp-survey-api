@@ -18,6 +18,14 @@ service OcpSurveyApi {
         };
     }
 
+    // Создает несколько новых опросов
+    rpc MultiCreateSurveyV1(MultiCreateSurveyV1Request) returns (MultiCreateSurveyV1Response) {
+        option (google.api.http) = {
+            post: "/v1/surveys/batch"
+            body: "*"
+        };
+    }
+
     // Возвращает описание опроса по ID
     rpc DescribeSurveyV1(DescribeSurveyV1Request) returns (DescribeSurveyV1Response) {
         option (google.api.http) = {
@@ -29,6 +37,14 @@ service OcpSurveyApi {
     rpc ListSurveysV1(ListSurveysV1Request) returns (ListSurveysV1Response) {
         option (google.api.http) = {
             get: "/v1/surveys"
+        };
+    }
+
+    // Обновляет существующий опрос
+    rpc UpdateSurveyV1(UpdateSurveyV1Request) returns (UpdateSurveyV1Response) {
+        option (google.api.http) = {
+            put: "/v1/surveys"
+            body: "*"
         };
     }
 
@@ -57,6 +73,14 @@ message CreateSurveyV1Response {
     uint64 survey_id = 1;
 }
 
+message MultiCreateSurveyV1Request {
+    repeated CreateSurveyV1Request surveys = 1;
+}
+
+message MultiCreateSurveyV1Response {
+    repeated uint64 survey_ids = 1;
+}
+
 message DescribeSurveyV1Request {
     uint64 survey_id = 1 [(validate.rules).uint64.gt = 0];
 }
@@ -72,6 +96,13 @@ message ListSurveysV1Request {
 
 message ListSurveysV1Response {
     repeated Survey surveys = 1;
+}
+
+message UpdateSurveyV1Request {
+    Survey survey = 1;
+}
+
+message UpdateSurveyV1Response {
 }
 
 message RemoveSurveyV1Request {

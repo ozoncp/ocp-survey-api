@@ -94,6 +94,9 @@ func (r *surveyRepo) ListSurveys(ctx context.Context, limit, offset uint64) ([]m
 		}
 		res = append(res, survey)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return res, nil
 }
@@ -102,24 +105,39 @@ func (r *surveyRepo) DescribeSurvey(ctx context.Context, surveyId uint64) (*mode
 	query := `SELECT id, user_id, link
 			FROM surveys WHERE id=$1;`
 
-	rows, err := r.db.QueryContext(ctx, query, surveyId)
+	row := r.db.QueryRowContext(ctx, query, surveyId)
+
+	survey := &models.Survey{}
+	err := row.Scan(&survey.Id, &survey.UserId, &survey.Link)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	} else if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	if rows.Next() {
-		survey := &models.Survey{}
-		err = rows.Scan(&survey.Id, &survey.UserId, &survey.Link)
-		if err != nil {
-			return nil, err
-		}
-		return survey, nil
+	return survey, nil
+}
+
+func (r *surveyRepo) UpdateSurvey(ctx context.Context, survey models.Survey) error {
+	query := `UPDATE surveys
+			SET user_id=$2, link=$3
+			WHERE id=$1;`
+
+	res, err := r.db.ExecContext(ctx, query, survey.Id, survey.UserId, survey.Link)
+	if err != nil {
+		return err
 	}
 
-	return nil, ErrNotFound
+	num, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if num == 0 {
+		return ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *surveyRepo) RemoveSurvey(ctx context.Context, surveyId uint64) error {
