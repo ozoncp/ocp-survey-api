@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE surveys (
+CREATE TABLE IF NOT EXISTS surveys (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
   link TEXT NOT NULL
@@ -9,5 +9,5 @@ CREATE TABLE surveys (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE surveys;
+DROP TABLE IF EXISTS surveys;
 -- +goose StatementEnd

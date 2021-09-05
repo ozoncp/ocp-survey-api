@@ -1,0 +1,29 @@
+chunksize: 32
+loglevel: "debug"
+
+grpc:
+  bind: "127.0.0.1"
+  port: "8082"
+
+gateway:
+  bind: "127.0.0.1"
+  port: "8080"
+
+database:
+  host: localhost
+  port: "5432"
+  user: postgres
+  pass: postgres
+  name: postgres
+
+metrics:
+  bind: "127.0.0.1"
+  port: "9100"
+
+broker:
+  list: 
+    - "localhost:9094"
+
+tracing:
+  agent_host: localhost
+  agent_port: "6831"

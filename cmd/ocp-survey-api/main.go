@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
@@ -22,21 +24,14 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/ozoncp/ocp-survey-api/internal/api"
+	"github.com/ozoncp/ocp-survey-api/internal/config"
 	"github.com/ozoncp/ocp-survey-api/internal/metrics"
 	"github.com/ozoncp/ocp-survey-api/internal/producer"
 	"github.com/ozoncp/ocp-survey-api/internal/repo"
 	desc "github.com/ozoncp/ocp-survey-api/pkg/ocp-survey-api"
 )
 
-var (
-	grpcPort        = ":8082"
-	httpPort        = ":8080"
-	dsn             = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	chunkSize       = 32
-	brokers         = []string{"localhost:9094"}
-	metricsPort     = ":9100"
-	tracingHostPort = "localhost:6831"
-)
+var cfg *config.Config
 
 // regSignalHandler отменяет контекст при получении сигналов SIGQUIT, SIGINT, SIGTERM.
 func regSignalHandler(ctx context.Context) context.Context {
@@ -63,7 +58,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	prod, err := producer.New(brokers)
+	prod, err := producer.New(cfg.Broker.List)
 	if err != nil {
 		log.Error().Err(err).Msg("Producer: New")
 		return err
@@ -88,6 +83,9 @@ func run(ctx context.Context) error {
 }
 
 func getRepo() (repo.Repo, error) {
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		cfg.Database.User, cfg.Database.Pass,
+		cfg.Database.Host, cfg.Database.Port, cfg.Database.Name)
 	db, err := sqlx.Open("pgx", dsn)
 	if err != nil {
 		log.Error().Err(err).Msg("DB: Connect")
@@ -105,14 +103,16 @@ func runService(
 	metr metrics.Metrics,
 	tracer opentracing.Tracer,
 ) error {
-	listen, err := net.Listen("tcp", grpcPort)
+	addr := fmt.Sprintf("%s:%s", cfg.GRPC.Bind, cfg.GRPC.Port)
+	listen, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Error().Err(err).Msg("GRPC: Listen")
 		return err
 	}
 
 	srv := grpc.NewServer()
-	desc.RegisterOcpSurveyApiServer(srv, api.NewOcpSurveyApi(repo, prod, metr, tracer, chunkSize))
+	desc.RegisterOcpSurveyApiServer(srv,
+		api.NewOcpSurveyApi(repo, prod, metr, tracer, cfg.ChunkSize))
 
 	srvErr := make(chan error)
 	go func() {
@@ -137,14 +137,15 @@ func runGateway(ctx context.Context) error {
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 
-	grpcEndpoint := "localhost" + grpcPort
+	grpcEndpoint := fmt.Sprintf("%s:%s", "localhost", cfg.GRPC.Port)
 	err := desc.RegisterOcpSurveyApiHandlerFromEndpoint(ctx, mux, grpcEndpoint, opts)
 	if err != nil {
 		log.Error().Err(err).Msg("Gateway: Register API handler")
 		return err
 	}
 
-	srv := &http.Server{Addr: httpPort, Handler: mux}
+	addr := fmt.Sprintf("%s:%s", cfg.Gateway.Bind, cfg.Gateway.Port)
+	srv := &http.Server{Addr: addr, Handler: mux}
 
 	srvErr := make(chan error)
 	go func() {
@@ -173,7 +174,8 @@ func runMetrics(ctx context.Context) error {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 
-	srv := &http.Server{Addr: metricsPort, Handler: mux}
+	addr := fmt.Sprintf("%s:%s", cfg.Metrics.Bind, cfg.Metrics.Port)
+	srv := &http.Server{Addr: addr, Handler: mux}
 
 	srvErr := make(chan error)
 	go func() {
@@ -199,6 +201,8 @@ func runMetrics(ctx context.Context) error {
 }
 
 func initTracing() (opentracing.Tracer, io.Closer, error) {
+	localAgentAddr := fmt.Sprintf("%s:%s", cfg.Tracing.AgentHost, cfg.Tracing.AgentPort)
+
 	cfg := jaegercfg.Configuration{
 		ServiceName: "ocp-survey-api",
 		Sampler: &jaegercfg.SamplerConfig{
@@ -206,7 +210,7 @@ func initTracing() (opentracing.Tracer, io.Closer, error) {
 			Param: 1,
 		},
 		Reporter: &jaegercfg.ReporterConfig{
-			LocalAgentHostPort: tracingHostPort,
+			LocalAgentHostPort: localAgentAddr,
 			LogSpans:           true,
 		},
 	}
@@ -220,7 +224,26 @@ func initTracing() (opentracing.Tracer, io.Closer, error) {
 	)
 }
 
+func getConfig() {
+	cfg = config.Get()
+
+	logLevels := map[string]zerolog.Level{
+		"trace":    zerolog.TraceLevel,
+		"debug":    zerolog.DebugLevel,
+		"info":     zerolog.InfoLevel,
+		"warn":     zerolog.WarnLevel,
+		"error":    zerolog.ErrorLevel,
+		"fatal":    zerolog.FatalLevel,
+		"panic":    zerolog.PanicLevel,
+		"disabled": zerolog.Disabled,
+	}
+	if level, ok := logLevels[cfg.LogLevel]; ok {
+		zerolog.SetGlobalLevel(level)
+	}
+}
+
 func main() {
+	getConfig()
 	log.Info().Msg("Ozon Code Platform Survey service started")
 
 	ctx := regSignalHandler(context.Background())
